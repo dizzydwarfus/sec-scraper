@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "sec-scraper"
+version = "0.1.0"
+description = "Module to scrape sec for financial information of companies with 10-K and 10-Q with SEC"
+authors = ["DizzyDwarfus"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+numpy = "^1.26.2"
+pandas = "^2.1.3"
+beautifulsoup4 = "^4.12.2"
+ipykernel = "^6.26.0"
+matplotlib = "^3.8.2"
+lxml = "^4.9.3"
+pydantic = "^2.5.2"
+pymongo = "^4.6.0"
+python-dotenv = "^1.0.0"
+seaborn = "^0.13.0"
+tqdm = "^4.66.1"
+langchain = "^0.0.340"
+jupyter = "^1.0.0"
+plotly = "^5.18.0"
+ratelimit = "^2.2.1"
+openpyxl = "^3.1.2"
+ruff = "^0.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

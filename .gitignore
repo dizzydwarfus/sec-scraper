@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+<<<<<<< HEAD
 # C extensions
 *.so
 
@@ -158,3 +159,10 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+=======
+# Environments
+.env
+
+# Logs
+*.log
+>>>>>>> e5e45b5 (set up backbone for sec-scraper module; setting up docker compose file for airflow next)
