@@ -8,3 +8,9 @@ __pycache__/
 
 # Logs
 *.log
+
+# poetry
+poetry.lock
+poetry-debug.log
+
+sec_scraper_311
