@@ -165,4 +165,13 @@ cython_debug/
 
 # Logs
 *.log
+<<<<<<< HEAD
 >>>>>>> e5e45b5 (set up backbone for sec-scraper module; setting up docker compose file for airflow next)
+=======
+
+# poetry
+poetry.lock
+poetry-debug.log
+
+sec_scraper_311
+>>>>>>> 5d00182 (changes in docker file, changes in structure of files)

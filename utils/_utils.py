@@ -8,17 +8,8 @@ import datetime as dt
 
 
 # Internal imports
-from sec_class import TickerData
+from main.ticker import TickerData
 from utils._dataclasses import Context, Facts
-
-
-def reverse_standard_mapping(standard_name_mapping: dict):
-    reverse_mapping = {}
-    for standard_name, xbrl_tags in standard_name_mapping.items():
-        for tag in xbrl_tags:
-            reverse_mapping[tag] = standard_name
-
-    return reverse_mapping
 
 
 def get_filing_facts(ticker: TickerData, filings_to_scrape: list, verbose=False):

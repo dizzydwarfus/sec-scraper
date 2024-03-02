@@ -25,26 +25,26 @@ class Context:
         Returns:
             str: contextId
         """
-        return self.context_tag.attrs.get('id')
-    
+        return self.context_tag.attrs.get("id")
+
     @property
     def entity(self) -> Union[str, None]:
         pattern = re.compile(self.entity_pattern)
         result = self.context_tag.find(pattern)
         return result.text if result is not None else None
-    
+
     @property
     def startDate(self) -> str:
         return self.search_dates(self.startDate_pattern)
-    
+
     @property
     def endDate(self) -> str:
         return self.search_dates(self.endDate_pattern)
-    
+
     @property
     def instant(self) -> str:
         return self.search_dates(self.instant_pattern)
-    
+
     @property
     def segment(self) -> Union[dict, None]:
         """Get segments and tags classifying the segment and store in dict
@@ -65,7 +65,7 @@ class Context:
         segment_breakdown = segment.find_all(segment_breakdown_pattern)
 
         for i in segment_breakdown:
-            segment_dict[i.attrs.get('dimension')] = i.text
+            segment_dict[i.attrs.get("dimension")] = i.text
 
         return segment_dict
 
@@ -83,14 +83,14 @@ class Context:
 
         if result is None:
             return None
-        
+
         result = result.text
 
-        if result == '':
+        if result == "":
             return None
-        
-        return dt.datetime.strptime(result, '%Y-%m-%d')
-    
+
+        return dt.datetime.strptime(result, "%Y-%m-%d")
+
     def to_dict(self) -> dict:
         """Convert context to dict
 
@@ -98,13 +98,13 @@ class Context:
             dict: dict containing context information
         """
         context_dict = {
-            'contextId': self.contextId,
-            'entity': self.entity,
-            'segment': self.segment,
-            'startDate': self.startDate,
-            'endDate': self.endDate,
-            'instant': self.instant,
-            'segmentLength': self.get_segment_length()
+            "contextId": self.contextId,
+            "entity": self.entity,
+            "segment": self.segment,
+            "startDate": self.startDate,
+            "endDate": self.endDate,
+            "instant": self.instant,
+            "segmentLength": self.get_segment_length(),
         }
         return context_dict
 
@@ -122,7 +122,7 @@ class Context:
         return len(segment)
 
     def __repr__(self):
-        return f'Context(contextId={self.contextId}, entity={self.entity}, segment={self.segment}, startDate={self.startDate}, endDate={self.endDate}, instant={self.instant})'
+        return f"Context(contextId={self.contextId}, entity={self.entity}, segment={self.segment}, startDate={self.startDate}, endDate={self.endDate}, instant={self.instant})"
 
     def __repr_html__(self):
         return f"""
@@ -138,12 +138,12 @@ class Context:
         """
 
     def __str__(self):
-        return f'''contextId={self.contextId}
+        return f"""contextId={self.contextId}
 entity={self.entity}
 segment={self.segment}
 startDate={self.startDate}
 endDate={self.endDate}
-instant={self.instant}'''
+instant={self.instant}"""
 
 
 @dataclass
@@ -157,7 +157,7 @@ class LinkLabels:
         Returns:
             str: labelId
         """
-        return self.label_tag.attrs.get('id')
+        return self.label_tag.attrs.get("id")
 
     @property
     def xlinkLabel(self) -> Union[str, None]:
@@ -166,7 +166,7 @@ class LinkLabels:
         Returns:
             str: linkLabel
         """
-        return self.label_tag.attrs.get('xlink:label')
+        return self.label_tag.attrs.get("xlink:label")
 
     @property
     def xlinkRole(self) -> Union[str, None]:
@@ -175,7 +175,7 @@ class LinkLabels:
         Returns:
             str: linkRole
         """
-        return self.label_tag.attrs.get('xlink:role')
+        return self.label_tag.attrs.get("xlink:role")
 
     @property
     def xlinkType(self) -> Union[str, None]:
@@ -184,7 +184,7 @@ class LinkLabels:
         Returns:
             str: linkType
         """
-        return self.label_tag.attrs.get('xlink:type')
+        return self.label_tag.attrs.get("xlink:type")
 
     @property
     def xlmnsXml(self) -> Union[str, None]:
@@ -193,7 +193,7 @@ class LinkLabels:
         Returns:
             str: xlmnsXml
         """
-        return self.label_tag.attrs.get('xmlns:xml')
+        return self.label_tag.attrs.get("xmlns:xml")
 
     @property
     def xlmLang(self) -> Union[str, None]:
@@ -202,7 +202,7 @@ class LinkLabels:
         Returns:
             str: xlmLang
         """
-        return self.label_tag.attrs.get('xml:lang')
+        return self.label_tag.attrs.get("xml:lang")
 
     @property
     def labelName(self) -> Union[str, None]:
@@ -219,10 +219,12 @@ class LinkLabels:
         Returns:
             dict: dict containing linkLabels information
         """
-        return dict(linkRole=self.linkRole, linkLabel=self.linkLabel, linkbase=self.linkbase)
+        return dict(
+            linkRole=self.linkRole, linkLabel=self.linkLabel, linkbase=self.linkbase
+        )
 
     def __repr__(self):
-        return f'LinkLabels(linkRole={self.linkRole}, linkLabel={self.linkLabel}, linkbase={self.linkbase})'
+        return f"LinkLabels(linkRole={self.linkRole}, linkLabel={self.linkLabel}, linkbase={self.linkbase})"
 
     def __repr_html__(self):
         return f"""
@@ -235,9 +237,9 @@ class LinkLabels:
         """
 
     def __str__(self):
-        return f'''linkRole={self.linkRole}
+        return f"""linkRole={self.linkRole}
 linkLabel={self.linkLabel}
-linkBase={self.linkbase}'''
+linkBase={self.linkbase}"""
 
 
 @dataclass
@@ -260,7 +262,7 @@ class Facts:
         Returns:
             str: factId
         """
-        return self.fact_tag.attrs.get('id')
+        return self.fact_tag.attrs.get("id")
 
     @property
     def contextRef(self) -> Union[str, None]:
@@ -269,7 +271,7 @@ class Facts:
         Returns:
             str: contextRef
         """
-        return self.fact_tag.attrs.get('contextref')
+        return self.fact_tag.attrs.get("contextref")
 
     @property
     def unitRef(self) -> Union[str, None]:
@@ -278,7 +280,7 @@ class Facts:
         Returns:
             str: unitRef
         """
-        return self.fact_tag.attrs.get('unitref')
+        return self.fact_tag.attrs.get("unitref")
 
     @property
     def decimals(self):
@@ -287,7 +289,7 @@ class Facts:
         Returns:
             str: decimals
         """
-        return self.fact_tag.attrs.get('decimals')
+        return self.fact_tag.attrs.get("decimals")
 
     @property
     def factValue(self) -> Union[str, int, None]:
@@ -304,10 +306,17 @@ class Facts:
         Returns:
             dict: dict containing facts information
         """
-        return dict(factName=self.factName, factId=self.factId, contextRef=self.contextRef, unitRef=self.unitRef, decimals=self.decimals, factValue=self.factValue)
+        return dict(
+            factName=self.factName,
+            factId=self.factId,
+            contextRef=self.contextRef,
+            unitRef=self.unitRef,
+            decimals=self.decimals,
+            factValue=self.factValue,
+        )
 
     def __repr__(self):
-        return f'Facts(factName={self.factName}, factId={self.factId}, contextRef={self.contextRef}, unitRef={self.unitRef}, decimals={self.decimals}, factValue={self.factValue})'
+        return f"Facts(factName={self.factName}, factId={self.factId}, contextRef={self.contextRef}, unitRef={self.unitRef}, decimals={self.decimals}, factValue={self.factValue})"
 
     def __repr_html__(self):
         return f"""
@@ -323,9 +332,9 @@ class Facts:
         """
 
     def __str__(self):
-        return f'''factName={self.factName}
+        return f"""factName={self.factName}
 factId={self.factId}
 contextRef={self.contextRef}
 unitRef={self.unitRef}
 decimals={self.decimals}
-factValue={self.factValue}'''
+factValue={self.factValue}"""
