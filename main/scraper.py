@@ -242,18 +242,16 @@ class Scraper:
 ## processor class will handle the processing of the data
 ## storer class will handle the storing of the data
 
-## TickerData will handle getting the ticker data
+## SECData/TickerData will handle getting the ticker data - DONE
 ### - get filings
 ### - get submissions
 ### - filing as list of dict
 ### - submission as list of dict
-### - get submission by accession number
-### - get filing by accession number
-### - get filing by date
-### - get submission by date
-### - get filing by form
+### - get filing by accession number - in kwargs
+### - get filing by date - in kwargs
+### - get filing by form - default argument
 
-## scraper class will handle the scraping of the data
+## scraper class will handle the scraping of the data - REFACTORING
 ### - inject TickerData as dependency
 ### - scrape facts
 ### - scrape labels
@@ -262,7 +260,7 @@ class Scraper:
 ### - scrape calculations
 ### - scrape definitions
 
-## processor class will handle the processing of the data
+## processor class will handle the processing of the data - NOT YET IMPLEMENTED
 ### - inject TickerData as dependency
 ### - inject Scraper as dependency
 ### - process facts
@@ -270,7 +268,7 @@ class Scraper:
 ### - process context
 ### - combine facts, labels, context
 
-## storer class will handle the storing of the data
+## storer class will handle the storing of the data - NOT YET IMPLEMENTED
 ### - inject TickerData as dependency
 ### - inject Scraper as dependency
 ### - inject Processor as dependency
