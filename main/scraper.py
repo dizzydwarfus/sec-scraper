@@ -188,14 +188,16 @@ class Scraper:
             )
             return None
 
-    def generate_filing_dict(self, filings: dict):
+    def generate_filing_dict(self, filings: list):
         for filing in filings:
             yield {
                 "accessionNumber": filing["accessionNumber"],
                 "form": filing["form"],
-                "date": filing["date"],
+                "date": filing["filingDate"],
                 "cik": self.ticker.cik,
                 "ticker": self.ticker.ticker,
+                "filingUrl": filing["file_url"],
+                "folderUrl": filing["folder_url"],
             }
 
     def scrape(self):
