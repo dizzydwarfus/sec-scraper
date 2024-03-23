@@ -222,6 +222,9 @@ class Scraper:
         self.scrape_definitions()
 
     def scrape_facts(self):
+        self.scrape_logger.info(
+            f"Scraping facts for {self.ticker.ticker} ({self.ticker.cik})"
+        )
         pass
 
     def scrape_labels(self):
