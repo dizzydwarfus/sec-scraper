@@ -1,3 +1,6 @@
+# Built-in imports
+from typing import List
+
 # Third party libraries
 from pymongo import MongoClient, ASCENDING
 from pymongo import IndexModel
@@ -59,10 +62,27 @@ class SECDatabase:
     def get_tickerfilings_index_information(self):
         return self.tickerfilings.index_information()
 
-    def get_tickerdata(self, cik: str = None, ticker: str = None):
+    def get_tickerdata(self, cik: str = None, ticker: str = None) -> dict:
         if cik is not None:
             return self.tickerdata.find_one({"cik": cik})
         elif ticker is not None:
             return self.tickerdata.find_one({"tickers": ticker.upper()})
+
         else:
             raise Exception("Please provide either a CIK or ticker.")
+
+    def get_tickerfilings(
+        self, cik: str = None, accession_number: str = None
+    ) -> List[dict]:
+        if cik is not None:
+            return [file for file in self.tickerfilings.find({"cik": cik})]
+
+        elif accession_number is not None:
+            return [
+                file
+                for file in self.tickerfilings.find_one(
+                    {"accessionNumber": accession_number}
+                )
+            ]
+        else:
+            raise Exception("Please provide either a CIK or accession number.")

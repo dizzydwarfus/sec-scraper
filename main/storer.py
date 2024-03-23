@@ -12,7 +12,7 @@ class Storer:
         self,
         conn_string: str,
     ) -> None:
-        self.scrape_logger = MyLogger(name="storer").scrape_logger
+        self.scrape_logger = MyLogger(name="Storer").scrape_logger
 
         self.db = SECDatabase(connection_string=conn_string)
 
@@ -42,7 +42,7 @@ class Storer:
             return submission["cik"]
         return None
 
-    def insert_filings(self, cik: str, filings: list):
+    def insert_filings(self, cik: str, filings: list, overwrite=False):
         """Insert filings into SEC database. Each submission has many filings. Accession number is the primary key.
 
         Args:
@@ -56,6 +56,15 @@ class Storer:
             for doc in filings:
                 doc["lastUpdated"] = dt.datetime.now()
 
+            if not overwrite:
+                existing_filings = self.db.get_tickerfilings(cik=cik)
+                filings = [
+                    filing
+                    for filing in filings
+                    if filing["accessionNumber"]
+                    not in [file["accessionNumber"] for file in existing_filings]
+                ]
+
             update_requests = [
                 UpdateOne(
                     {"accessionNumber": doc["accessionNumber"]},
@@ -65,12 +74,14 @@ class Storer:
                 for doc in filings
             ]
 
-            self.tickerfilings.bulk_write(update_requests)
+            self.db.tickerfilings.bulk_write(update_requests)
             self.scrape_logger.info(f"Sucessfully updated filings for {cik}...")
 
         except Exception as e:
-            self.scrape_logger.error(f"Failed to insert filings for {cik}...{e}")
-            return cik
+            self.scrape_logger.error(
+                f"Failed to insert filings for {cik}...{type(e).__name__}: {e}"
+            )
+
         return None
 
     def create_update_request(
@@ -86,7 +97,7 @@ class Storer:
         )
         return update
 
-    def insert_facts(self, accession: str, facts: list):
+    def insert_facts(self, accession: str, facts: list, overwrite=False):
         """Insert facts into SEC database. Each filing has many facts.
 
         Args:
@@ -94,7 +105,6 @@ class Storer:
 
         Returns:
             str: empty string if successful
-            str: ticker's cik if failed
         """
         try:
             for doc in facts:
@@ -109,6 +119,7 @@ class Storer:
             self.scrape_logger.info(f"Updated facts for {accession}...")
 
         except Exception as e:
-            self.scrape_logger.error(f"Failed to insert facts for {accession}...{e}")
-            return accession
+            self.scrape_logger.error(
+                f"Failed to insert facts for {accession}...{type(e).__name__}: {e}"
+            )
         return None

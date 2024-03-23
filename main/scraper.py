@@ -49,7 +49,7 @@ class Scraper:
     ):
         self.ticker = TickerData(ticker)
         self.search_strategy = search_strategy
-        self.scrape_logger = MyLogger(name="scraper").scrape_logger
+        self.scrape_logger = MyLogger(name="Scraper").scrape_logger
 
     def get_file_data(self, file_url: str) -> BeautifulSoup:
         """Get file data from file url which can be retrieved by calling self.filing_urls property.
@@ -184,7 +184,7 @@ class Scraper:
             return df
         except Exception as e:
             self.scrape_logger.error(
-                f"Failed to retrieve metalinks from {metalinks_url}. Error: {e}"
+                f"Failed to retrieve metalinks from {metalinks_url}. {type(e).__name__}: {e}"
             )
             return None
 
@@ -222,6 +222,7 @@ class Scraper:
         self.scrape_definitions()
 
     def scrape_facts(self):
+        #
         pass
 
     def scrape_labels(self):
@@ -254,7 +255,7 @@ class Scraper:
 ### - get filing by form - default argument
 
 ## scraper class will handle the scraping of the data - REFACTORING
-### - inject TickerData as dependency
+### - inject TickerData as dependency - DONE
 ### - scrape facts
 ### - scrape labels
 ### - scrape context
@@ -271,11 +272,23 @@ class Scraper:
 ### - combine facts, labels, context
 
 ## storer class will handle the storing of the data - NOT YET IMPLEMENTED
-### - inject TickerData as dependency
-### - inject Scraper as dependency
-### - inject Processor as dependency
+### - inject SECdatabase as dependency - DONE
+### - store filings - DONE
 ### - store facts
 ### - store labels
 ### - store context
 ### - store combined data
 ### - store all data
+
+## SECdatabase class will handle the database connection - DONE
+
+
+## main class will handle the orchestration of the classes - NOT YET IMPLEMENTED
+### - inject TickerData as dependency
+### - inject Scraper as dependency
+### - inject Processor as dependency
+### - inject Storer as dependency
+### - scrape data
+### - process data
+### - store data
+### - run all

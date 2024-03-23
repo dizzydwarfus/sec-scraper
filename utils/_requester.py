@@ -11,7 +11,7 @@ class RateLimitedRequester:
         requester_name: str,
         requester_email: str,
     ) -> None:
-        self.scrape_logger = MyLogger().scrape_logger
+        self.scrape_logger = MyLogger(name="RateLimitedRequester").scrape_logger
         self.requester_company = requester_company
         self.requester_name = requester_name
         self.requester_email = requester_email

@@ -145,6 +145,7 @@ class SECData:
         Returns:
             cik_df: DataFrame containing CIK and ticker
         """
+        self.scrape_logger.info("Retrieving CIK list from SEC database...")
         url = r"https://www.sec.gov/files/company_tickers.json"
         cik_raw = self._requester.rate_limited_request(url, self.sec_headers)
         cik_json = cik_raw.json()
@@ -191,6 +192,10 @@ class SECData:
             url = f"{self.BASE_API_URL}submissions/{submission_file}"
         else:
             raise Exception("Please provide either a CIK number or a submission file.")
+
+        self.scrape_logger.info(
+            f"Retrieving submissions of {cik if cik is not None else submission_file} from {url}..."
+        )
         response = self._requester.rate_limited_request(
             url, headers=self.sec_data_headers
         )
@@ -312,12 +317,10 @@ class SECData:
         Returns:
             json: pandas dataframe containing the XBRL disclosures from a single company (CIK)
         """
-        if cik is not None:
-            url = self.BASE_DIRECTORY_URL + cik + "/" + "index.json"
+        cik = cik if cik is not None else self.cik
+        url = self.BASE_DIRECTORY_URL + cik + "/" + "index.json"
 
-        else:
-            url = self.BASE_DIRECTORY_URL + self.cik + "/" + "index.json"
-
+        self.scrape_logger.info(f"Retrieving index file of {cik} from {url}...")
         response = self._requester.rate_limited_request(url, headers=self.sec_headers)
         return response.json()
 
@@ -330,6 +333,7 @@ class SECData:
         Returns:
             pd.DataFrame: DataFrame containing the SIC codes and descriptions
         """
+        self.scrape_logger.info(f"Retrieving SIC list from {sic_list_url}...")
         response = self._requester.rate_limited_request(
             sic_list_url, headers=self.sec_headers
         )
