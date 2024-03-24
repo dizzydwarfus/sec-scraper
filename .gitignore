@@ -14,3 +14,5 @@ poetry.lock
 poetry-debug.log
 
 sec_scraper_311
+
+.DS_Store
