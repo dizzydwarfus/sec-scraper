@@ -169,7 +169,7 @@ class SECData:
         cik = f"{ticker_cik.iloc[0]:010d}"
         return cik
 
-    def get_tags(self, xsd_url: str = US_GAAP_TAXONOMY_URL):
+    def get_tags(self, xsd_url: str = US_GAAP_TAXONOMY_URL) -> pd.DataFrame:
         """Get the list of tags (elements) in us-gaap taxonomy or provide a different xsd_url to get tags from a different taxonomy.
 
         Returns:
@@ -207,7 +207,7 @@ class SECData:
         cik: str,
         tag: str,
         taxonomy: str = "us-gaap",
-    ):
+    ) -> dict:
         """The company-concept API returns all the XBRL disclosures from a single company (CIK)
         and concept (a taxonomy and tag) into a single JSON file, with a separate array of facts
         for each units on measure that the company has chosen to disclose
@@ -233,7 +233,7 @@ class SECData:
         data = json.loads(response.text)
         return data
 
-    def get_company_facts(self, cik):
+    def get_company_facts(self, cik) -> dict:
         url = f"{self.BASE_API_URL}api/xbrl/companyfacts/CIK{cik}.json"
         response = self._requester.rate_limited_request(
             url, headers=self.sec_data_headers
@@ -242,7 +242,7 @@ class SECData:
         data = json.loads(response.text)
         return data
 
-    def get_frames(self, taxonomy, tag, unit, period):
+    def get_frames(self, taxonomy, tag, unit, period) -> dict:
         """The xbrl/frames API aggregates one fact for each reporting entity that is last filed that most closely fits the calendrical period requested.
         This API supports for annual, quarterly and instantaneous data: https://data.sec.gov/api/xbrl/frames/us-gaap/AccountsPayableCurrent/USD/CY2019Q1I.json
 

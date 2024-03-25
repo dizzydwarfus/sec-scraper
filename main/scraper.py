@@ -72,7 +72,9 @@ class Scraper:
             self.scrape_logger.error(
                 f"Failed to parse file data from {file_url}. Error: {e}"
             )
-            raise Exception(f"Failed to parse file data from {file_url}. Error: {e}")
+            raise Exception(
+                f"Failed to parse file data from {file_url}. {type(e).__name__}: {e}"
+            )
 
     def get_elements(
         self, folder_url: str, index_df: pd.DataFrame, scrape_file_extension: str
