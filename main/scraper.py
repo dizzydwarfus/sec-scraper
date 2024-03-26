@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Union
 import re
 
 # Third Party Imports
@@ -11,6 +11,7 @@ from bs4.element import Tag
 from main.ticker import TickerData
 from utils._logger import MyLogger
 from utils._generic import convert_keys_to_lowercase
+from utils._dataclasses import Facts
 
 
 class SearchStrategy(ABC):
@@ -50,45 +51,80 @@ class Scraper:
         self.ticker = TickerData(ticker)
         self.search_strategy = search_strategy
         self.scrape_logger = MyLogger(name="Scraper").scrape_logger
+        self._soups = []
+        self._all_facts = pd.DataFrame()
+        self.failed = []
 
-    def get_file_data(self, file_url: str) -> BeautifulSoup:
+    def get_file_data(self, file_dicts: Union[List[dict], dict], force=False) -> None:
         """Get file data from file url which can be retrieved by calling self.filing_urls property.
 
         Args:
-            file_url (str): File url of .txt file to retrieve data from on the SEC website
+            file_dicts (str): List of file information in a dictionary format to retrieve data from on the SEC website.
+                              Use method self.ticker.search_filings(**kwargs) or self.ticker.filings_list to get list of file_dicts.
+                              Properties of self.ticker also returns file dicts. - self.ticker.latest_10K, self.ticker.latest_10Q, etc.
+            force (bool): If True, force the scraper to re-request and re-parse the file data. Default is False.
 
         Returns:
-            data: File data as a BeautifulSoup object
+            None
         """
-        data = self.ticker._requester.rate_limited_request(
-            url=file_url, headers=self.ticker.sec_headers
-        )
-        try:
-            soup = BeautifulSoup(data.content, "lxml")
-            self.scrape_logger.info(f"Parsed file data from {file_url} successfully.")
-            return soup
+        if isinstance(file_dicts, dict):
+            file_dicts = [file_dicts]
+        for file_dict in file_dicts:
+            file_url = file_dict.get("file_url")
+            folder_url = file_dict.get("folder_url")
+            accession_number = file_dict.get("accessionNumber")
+            try:
+                if (
+                    len(
+                        [
+                            soup.get("accession_number")
+                            for soup in self._soups
+                            if soup.get("accession_number") == accession_number
+                        ]
+                    )
+                    > 0
+                    and not force
+                ):
+                    self.scrape_logger.info(
+                        f"File data from {accession_number}: {file_url} already requested and parsed."
+                    )
+                    continue
 
-        except Exception as e:
-            self.scrape_logger.error(
-                f"Failed to parse file data from {file_url}. Error: {e}"
-            )
-            raise Exception(
-                f"Failed to parse file data from {file_url}. {type(e).__name__}: {e}"
-            )
+                data = self.ticker._requester.rate_limited_request(
+                    url=file_url, headers=self.ticker.sec_headers
+                )
+                soup = BeautifulSoup(data.content, "lxml")
+                self.scrape_logger.info(
+                    f"Parsed file data from {accession_number}: {file_url} successfully."
+                )
+                self._soups.append(
+                    {
+                        "accession_number": accession_number,
+                        "soup": soup,
+                        "file_url": file_url,
+                        "folder_url": folder_url,
+                    }
+                )
+
+            except Exception as e:
+                self.scrape_logger.error(
+                    f"Failed to parse file data from {accession_number}: {file_url}. {type(e).__name__}: {e}"
+                )
+                continue
 
     def get_elements(
-        self, folder_url: str, index_df: pd.DataFrame, scrape_file_extension: str
+        self, folder_url: str, scrape_file_extension: str = "_lab"
     ) -> pd.DataFrame:
         """Get elements from .xml files from folder_url.
 
         Args:
             folder_url (str): folder url to retrieve data from
-            index_df (pd.DataFrame): dataframe containing files in the filing folder
-            scrape_file_extension (str): .xml file extension to scrape
+            scrape_file_extension (str): .xml file extension to scrape. Use self.ticker.SCRAPE_FILE_EXTENSION to get list of possible values
 
         Returns:
             pd.DataFrame: returns a dataframe containing the elements, attributes, text
         """
+        index_df = self.ticker.get_filing_folder_index(folder_url)
         xml = index_df.query(f"name.str.contains('{scrape_file_extension}')")
         xml_content = self._requester.rate_limited_request(
             folder_url + "/" + xml["name"].iloc[0], headers=self.sec_headers
@@ -115,7 +151,7 @@ class Scraper:
         if self.search_strategy is None and pattern is None:
             raise Exception("Search strategy not set and no pattern provided.")
         if pattern is None:
-            pattern = self.search_strategy.get_pattern()
+            pattern = self.search_strategy.set_pattern()
         return soup.find_all(re.compile(pattern))
 
     def set_search_strategy(self, search_strategy: SearchStrategy):
@@ -224,8 +260,36 @@ class Scraper:
         self.scrape_definitions()
 
     def scrape_facts(self):
-        #
-        pass
+        for soup_dict in self._soups:
+            if soup_dict.get("soup") is None:
+                self.scrape_logger.error(f"No soup found in soup_dict: {soup_dict}")
+
+            try:  # Scrape facts
+                facts_list = []
+                soup = soup_dict.get("soup")
+                accession_number = soup_dict.get("accession_number")
+
+                facts = self.search_facts(soup=soup)
+                for fact_tag in facts:
+                    facts_list.append(Facts(fact_tag=fact_tag).to_dict())
+                facts_df = pd.DataFrame(facts_list)
+
+                facts_df["accessionNumber"] = accession_number
+                self._all_facts = pd.concat(
+                    [self._all_facts, facts_df], ignore_index=True
+                )
+            except Exception as e:
+                self.scrape_logger.error(
+                    f"Failed to scrape facts for {accession_number}...{type(e).__name__}: {e}"
+                )
+                self.failed.append(
+                    dict(
+                        failed_type="facts",
+                        accessionNumber=accession_number,
+                        error=f"Failed to scrape facts for {accession_number}...{type(e).__name__}: {e}",
+                    )
+                )
+                pass
 
     def scrape_labels(self):
         pass
@@ -258,6 +322,9 @@ class Scraper:
 
 ## scraper class will handle the scraping of the data - REFACTORING
 ### - inject TickerData as dependency - DONE
+#### scraper needs to get soup object first then pass to scrape methods
+# store soup object in class as a list attribute?
+# filter filings method to get filings by form, date, accession number
 ### - scrape facts
 ### - scrape labels
 ### - scrape context

@@ -81,7 +81,7 @@ class TickerData(SECData):
     @property
     def latest_10Q(
         self,
-    ) -> pd.DataFrame:
+    ) -> dict:
         return (
             self.filings.query("form == '10-Q'").iloc[0, :].to_dict()
             if len(self.filings.query("form == '10-Q'")) > 0
@@ -91,7 +91,7 @@ class TickerData(SECData):
     @property
     def latest_10K(
         self,
-    ) -> pd.DataFrame:
+    ) -> dict:
         return (
             self.filings.query("form == '10-K'").iloc[0, :].to_dict()
             if len(self.filings.query("form == '10-K'")) > 0
@@ -101,7 +101,7 @@ class TickerData(SECData):
     @property
     def latest_8K(
         self,
-    ) -> pd.DataFrame:
+    ) -> dict:
         return (
             self.filings.query("form == '8-K'").iloc[0, :].to_dict()
             if len(self.filings.query("form == '8-K'")) > 0
@@ -152,6 +152,34 @@ class TickerData(SECData):
             if folder["type"] == "folder.gif"
         ]
         return filing_folder_urls
+
+    def search_filings(
+        self,
+        form: str = None,
+        start: str = None,
+        end: str = None,
+        **kwargs,
+    ) -> pd.DataFrame:
+        """Search filings based on form, date, period.
+
+        Args:
+            form (str, optional): form to search for. Defaults to None.
+            start or end (str, optional): date to search for. Defaults to None. Date format is 'YYYY-MM-DD' / 'YYYY-MM' / 'YYYY'
+            **kwargs: additional keyword arguments can include any column in the filings DataFrame
+        Returns:
+            pd.DataFrame: DataFrame containing search results
+        """
+        query = []
+        if form is not None:
+            query.append(f"form == '{form}'")
+        if start is not None:
+            query.append(f"filingDate >= '{start}'")
+        if end is not None:
+            query.append(f"filingDate <= '{end}'")
+        for key, value in kwargs.items():
+            query.append(f"{key} == '{value}'")
+
+        return self.filings.query(" and ".join(query)).to_dict("records")
 
     def get_filing_folder_index(self, folder_url: str, return_df: bool = True):
         """Get filing folder index from folder url.
@@ -227,33 +255,6 @@ class TickerData(SECData):
         )
 
         return filings
-
-    def search_filings(
-        self,
-        form: str = None,
-        start: str = None,
-        end: str = None,
-        **kwargs,
-    ) -> pd.DataFrame:
-        """Search filings based on form, date, period.
-
-        Args:
-            form (str, optional): form to search for. Defaults to None.
-            date (str, optional): date to search for. Defaults to None.
-            period (str): period to search for. Defaults to None.
-            **kwargs: additional keyword arguments can include any column in the filings DataFrame
-        Returns:
-            pd.DataFrame: DataFrame containing search results
-        """
-        query = []
-        if form is not None:
-            query.append(f"form == '{form}'")
-        if start is not None and end is not None:
-            query.append(f"filingDate >= '{start}' and filingDate <= '{end}'")
-        for key, value in kwargs.items():
-            query.append(f"{key} == '{value}'")
-
-        return self.filings.query(" and ".join(query))
 
     def _filings_as_list(
         self,
