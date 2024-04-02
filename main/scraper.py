@@ -11,7 +11,7 @@ from bs4.element import Tag
 from main.ticker import TickerData
 from utils._logger import MyLogger
 from utils._generic import convert_keys_to_lowercase
-from utils._dataclasses import Facts
+from utils._dataclasses import Facts, Context
 
 
 class SearchStrategy(ABC):
@@ -53,6 +53,7 @@ class Scraper:
         self.scrape_logger = MyLogger(name="Scraper").scrape_logger
         self._soups = []
         self._all_facts = pd.DataFrame()
+        self._all_context = pd.DataFrame()
         self.failed = []
 
     def get_file_data(self, file_dicts: Union[List[dict], dict], force=False) -> None:
@@ -263,6 +264,7 @@ class Scraper:
         for soup_dict in self._soups:
             if soup_dict.get("soup") is None:
                 self.scrape_logger.error(f"No soup found in soup_dict: {soup_dict}")
+                continue
 
             try:  # Scrape facts
                 facts_list = []
@@ -295,7 +297,37 @@ class Scraper:
         pass
 
     def scrape_context(self):
-        pass
+        for soup_dict in self._soups:
+            if soup_dict.get("soup") is None:
+                self.scrape_logger.error(f"No soup found in soup_dict: {soup_dict}")
+                continue
+
+            try:  # Scrape context
+                context_list = []
+                soup = soup_dict.get("soup")
+                accession_number = soup_dict.get("accession_number")
+                contexts = self.search_context(soup=soup)
+                for tag in contexts:
+                    context_list.append(Context(context_tag=tag).to_dict())
+                context_df = pd.DataFrame(context_list).drop_duplicates(
+                    subset=["contextId"], keep="first"
+                )
+                context_df["accessionNumber"] = accession_number
+                self._all_context = pd.concat(
+                    [self._all_context, context_df], ignore_index=True
+                )
+            except Exception as e:
+                self.scrape_logger.error(
+                    f"Failed to scrape contexts for {accession_number}...{type(e).__name__}: {e}"
+                )
+                self.failed.append(
+                    dict(
+                        failed_type="contexts",
+                        accessionNumber=accession_number,
+                        error=f"Failed to scrape contexts for {accession_number}...{type(e).__name__}: {e}",
+                    )
+                )
+                pass
 
     def scrape_metalinks(self):
         pass
