@@ -113,6 +113,8 @@ class Scraper:
                 )
                 continue
 
+    # should move get_filing_folder_index outside of function so repeated calls are avoided
+    # store index_df with folder_url or accession_number to be used to identify _lab.xml of a specific filing
     def get_elements(
         self, folder_url: str, scrape_file_extension: str = "_lab"
     ) -> pd.DataFrame:
@@ -263,7 +265,9 @@ class Scraper:
     def scrape_facts(self):
         for soup_dict in self._soups:
             if soup_dict.get("soup") is None:
-                self.scrape_logger.error(f"No soup found in soup_dict: {soup_dict}")
+                self.scrape_logger.error(
+                    f"No soup found in soup_dict: {soup_dict['accession_number']}"
+                )
                 continue
 
             try:  # Scrape facts
@@ -293,13 +297,12 @@ class Scraper:
                 )
                 pass
 
-    def scrape_labels(self):
-        pass
-
     def scrape_context(self):
         for soup_dict in self._soups:
             if soup_dict.get("soup") is None:
-                self.scrape_logger.error(f"No soup found in soup_dict: {soup_dict}")
+                self.scrape_logger.error(
+                    f"No soup found in soup_dict: {soup_dict['accession_number']}"
+                )
                 continue
 
             try:  # Scrape context
@@ -325,6 +328,50 @@ class Scraper:
                         failed_type="contexts",
                         accessionNumber=accession_number,
                         error=f"Failed to scrape contexts for {accession_number}...{type(e).__name__}: {e}",
+                    )
+                )
+                pass
+
+    def scrape_labels(self):
+        for soup_dict in self._soups:
+            if soup_dict.get("folder_url") is None:
+                self.scrape_logger.error(
+                    f"No folder_url found: {soup_dict['accession_number']}"
+                )
+                continue
+
+            try:  # Scrape labels
+                accession_number = soup_dict.get("accession_number")
+                folder_url = soup_dict.get("folder_url")
+                labels = self.get_elements(
+                    folder_url=folder_url,
+                    scrape_file_extension="_lab",
+                ).query("`xlink:type` == 'resource'")
+                labels["xlink:role"] = (
+                    labels["xlink:role"].str.split("/").apply(lambda x: x[-1])
+                )
+                labels["xlink:labelOriginal"] = labels["xlink:label"]
+                labels["xlink:label"] = (
+                    labels["xlink:label"]
+                    .str.replace("(lab_)|(_en-US)", "", regex=True)
+                    .str.split("_")
+                    .apply(lambda x: ":".join(x[:2]))
+                    .str.lower()
+                )
+                labels["accessionNumber"] = accession_number
+                self._all_labels = pd.concat(
+                    [self._all_labels, labels], ignore_index=True
+                )
+
+            except Exception as e:
+                self.scrape_logger.error(
+                    f"Failed to scrape labels for {folder_url}...{e}"
+                )
+                self.failed.append(
+                    dict(
+                        failed_type="labels",
+                        accessionNumber=accession_number,
+                        error=f"Failed to scrape labels for {accession_number}...{type(e).__name__}: {e}",
                     )
                 )
                 pass
