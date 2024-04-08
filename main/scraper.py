@@ -54,6 +54,9 @@ class Scraper:
         self._soups = []
         self._all_facts = pd.DataFrame()
         self._all_context = pd.DataFrame()
+        self._all_labels = pd.DataFrame()
+        self._merged_data = pd.DataFrame()
+        self.final_data = None
         self.failed = []
 
     def get_file_data(self, file_dicts: Union[List[dict], dict], force=False) -> None:
@@ -129,8 +132,8 @@ class Scraper:
         """
         index_df = self.ticker.get_filing_folder_index(folder_url)
         xml = index_df.query(f"name.str.contains('{scrape_file_extension}')")
-        xml_content = self._requester.rate_limited_request(
-            folder_url + "/" + xml["name"].iloc[0], headers=self.sec_headers
+        xml_content = self.ticker._requester.rate_limited_request(
+            folder_url + "/" + xml["name"].iloc[0], headers=self.ticker.sec_headers
         ).content
 
         xml_soup = BeautifulSoup(xml_content, "lxml-xml")
@@ -190,8 +193,8 @@ class Scraper:
             }
         """
         try:
-            response = self._requester.rate_limited_request(
-                url=metalinks_url, headers=self.sec_headers
+            response = self.ticker._requester.rate_limited_request(
+                url=metalinks_url, headers=self.ticker.sec_headers
             ).json()
             metalinks_instance = convert_keys_to_lowercase(response["instance"])
             instance_key = list(metalinks_instance.keys())[0]
@@ -229,40 +232,15 @@ class Scraper:
             )
             return None
 
-    def generate_filing_dict(self, filings: list):
-        for filing in filings:
-            yield {
-                "accessionNumber": filing["accessionNumber"],
-                "form": filing["form"],
-                "date": filing["filingDate"],
-                "cik": self.ticker.cik,
-                "ticker": self.ticker.ticker,
-                "filingUrl": filing["file_url"],
-                "folderUrl": filing["folder_url"],
-            }
-
-    def scrape(self):
-        self.scrape_logger.info(f"Scraping {self.ticker.ticker} ({self.ticker.cik})")
-
-        # Scrape facts
-        self.scrape_facts()
-
-        # Scrape labels
-        self.scrape_labels()
-
-        # Scrape context
-        self.scrape_context()
-
-        # Scrape metalinks
-        self.scrape_metalinks()
-
-        # Scrape calculations
-        self.scrape_calculations()
-
-        # Scrape definitions
-        self.scrape_definitions()
-
     def scrape_facts(self):
+        if len(self._soups) == 0:
+            self.scrape_logger.error(
+                "No soups found! Please use method self.get_file_data(file_dicts) first. Use self.ticker.search_filings(form, start,end) to get file_dicts."
+            )
+            raise Exception(
+                "No soups found! Please use method self.get_file_data(file_dicts) first. Use self.ticker.search_filings(form, start,end) to get file_dicts."
+            )
+
         for soup_dict in self._soups:
             if soup_dict.get("soup") is None:
                 self.scrape_logger.error(
@@ -298,6 +276,14 @@ class Scraper:
                 pass
 
     def scrape_context(self):
+        if len(self._soups) == 0:
+            self.scrape_logger.error(
+                "No soups found! Please use method self.get_file_data(file_dicts) first. Use self.ticker.search_filings(form, start,end) to get file_dicts."
+            )
+            raise Exception(
+                "No soups found! Please use method self.get_file_data(file_dicts) first. Use self.ticker.search_filings(form, start,end) to get file_dicts."
+            )
+
         for soup_dict in self._soups:
             if soup_dict.get("soup") is None:
                 self.scrape_logger.error(
@@ -333,6 +319,14 @@ class Scraper:
                 pass
 
     def scrape_labels(self):
+        if len(self._soups) == 0:
+            self.scrape_logger.error(
+                "No soups found! Please use method self.get_file_data(file_dicts) first. Use self.ticker.search_filings(form, start,end) to get file_dicts."
+            )
+            raise Exception(
+                "No soups found! Please use method self.get_file_data(file_dicts) first. Use self.ticker.search_filings(form, start,end) to get file_dicts."
+            )
+
         for soup_dict in self._soups:
             if soup_dict.get("folder_url") is None:
                 self.scrape_logger.error(
@@ -376,6 +370,7 @@ class Scraper:
                 )
                 pass
 
+    # may not need to implement these methods
     def scrape_metalinks(self):
         pass
 
@@ -384,6 +379,91 @@ class Scraper:
 
     def scrape_definitions(self):
         pass
+
+    def merge_data(self):
+        self.scrape_logger.info(
+            f"Merging facts with context and labels. Current facts length: {len(self._all_facts)}..."
+        )
+        try:
+            self._merged_data = self._all_facts.merge(
+                self._all_context,
+                how="left",
+                left_on=["contextRef", "accessionNumber"],
+                right_on=["contextId", "accessionNumber"],
+            ).merge(
+                self._all_labels.query("`xlink:role` == 'label'"),
+                how="left",
+                left_on=["factName", "accessionNumber"],
+                right_on=["xlink:label", "accessionNumber"],
+            )
+
+            self.scrape_logger.info(
+                f"Successfully merged facts with context and labels. Merged facts length: {len(self._merged_data)}..."
+            )
+        except Exception as e:
+            self.scrape_logger.error(
+                f"Failed to merge facts with context and labels. {type(e).__name__}: {e}"
+            )
+            self.failed.append(
+                dict(
+                    failed_type="merge_data",
+                    error=f"Failed to merge facts with context and labels. {type(e).__name__}: {e}",
+                    accessionNumber=None,
+                )
+            )
+            pass
+
+    def parse_final_df(self):
+        self.final_data = self._merged_data.loc[
+            ~self._merged_data["labelText"].isnull(),
+            [
+                "labelText",
+                "segment",
+                "startDate",
+                "endDate",
+                "instant",
+                "factId",
+                "factValue",
+                "unitRef",
+                "accessionNumber",
+            ],
+        ].drop_duplicates(subset=["factId", "accessionNumber"])
+
+    def scrape(
+        self,
+        form: str = None,
+        start: str = None,
+        end: str = None,
+        **kwargs,
+    ):
+        """Scrape data from SEC website.
+
+        Args:
+            form (str, optional): form to search for. Defaults to None.
+            start or end (str, optional): date to search for. Defaults to None. Date format is 'YYYY-MM-DD' / 'YYYY-MM' / 'YYYY'
+            **kwargs: additional keyword arguments can include any column in the filings DataFrame
+        Returns:
+            pd.DataFrame: DataFrame containing scraped results
+        """
+        self.scrape_logger.info(f"Scraping {self.ticker.ticker} ({self.ticker.cik})")
+
+        # Get file data
+        self.get_file_data(self.ticker.search_filings(form=form, start=start, end=end))
+
+        # Scrape facts
+        self.scrape_facts()
+
+        # Scrape labels
+        self.scrape_labels()
+
+        # Scrape context
+        self.scrape_context()
+
+        # Merge facts, labels, context
+        self.merge_data()
+
+        # Parse final dataframe
+        self.parse_final_df()
 
 
 # separate classes into scraper, processor, and storer classes
@@ -404,9 +484,9 @@ class Scraper:
 #### scraper needs to get soup object first then pass to scrape methods
 # store soup object in class as a list attribute?
 # filter filings method to get filings by form, date, accession number
-### - scrape facts
-### - scrape labels
-### - scrape context
+### - scrape facts - DONE
+### - scrape labels - DONE
+### - scrape context - DONE
 ### - scrape metalinks
 ### - scrape calculations
 ### - scrape definitions

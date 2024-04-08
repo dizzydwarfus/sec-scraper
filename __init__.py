@@ -1,3 +1,8 @@
+# import sys
+# import os
+
+# sys.append(os.getcwd())
+
 from main.sec import SECData
 from main.ticker import TickerData
 from main.scraper import Scraper

@@ -171,7 +171,7 @@ class TickerData(SECData):
         """
         query = []
         if form is not None:
-            query.append(f"form == '{form}'")
+            query.append(f"form == '{form.upper()}'")
         if start is not None:
             query.append(f"filingDate >= '{start}'")
         if end is not None:
