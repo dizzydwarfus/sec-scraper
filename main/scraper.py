@@ -465,6 +465,11 @@ class Scraper:
         # Parse final dataframe
         self.parse_final_df()
 
+        self.scrape_logger.info(
+            f"Scraping {self.ticker.ticker} ({self.ticker.cik}) complete. Final data length: {len(self.final_data)}"
+        )
+        return self.final_data
+
 
 # separate classes into scraper, processor, and storer classes
 ## processor class will handle the processing of the data
