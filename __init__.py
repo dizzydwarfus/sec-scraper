@@ -8,6 +8,7 @@ from main.ticker import TickerData
 from main.scraper import Scraper
 from main.processor import Processor
 from main.storer import Storer
+from main.file_downloader import FileDownloader
 
 from utils._requester import RateLimitedRequester
 from utils.database._connector import SECDatabase

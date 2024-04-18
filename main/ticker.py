@@ -1,3 +1,6 @@
+# Built-in Imports
+from typing import List
+
 # Third-party libraries
 import pandas as pd
 
@@ -159,7 +162,7 @@ class TickerData(SECData):
         start: str = None,
         end: str = None,
         **kwargs,
-    ) -> pd.DataFrame:
+    ) -> List[dict]:
         """Search filings based on form, date, period.
 
         Args:
