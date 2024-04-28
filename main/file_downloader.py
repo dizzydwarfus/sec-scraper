@@ -70,12 +70,19 @@ class FileDownloader:
 
         for filing in filings:
             folder_path = directory + f"/{self.ticker.ticker}/{filing['form'].upper()}"
-            content = self._request_file(filing["file_url"])
-            self._save_file(
-                file_content=content,
-                folder_path=folder_path,
-                file_path=f"{folder_path}/{filing['accessionNumber']}.txt",
-            )
+            # check if the file already exists
+            if os.path.exists(f"{folder_path}/{filing['accessionNumber']}.txt"):
+                self.scrape_logger.info(
+                    f"File {filing['accessionNumber']}.txt already exists"
+                )
+                continue
+            else:
+                content = self._request_file(filing["file_url"])
+                self._save_file(
+                    file_content=content,
+                    folder_path=folder_path,
+                    file_path=f"{folder_path}/{filing['accessionNumber']}.txt",
+                )
         return None
 
 
